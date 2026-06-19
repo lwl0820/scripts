@@ -52,5 +52,6 @@ EOF
 
 run_case "stderr" 'printf "Private key: private-stderr\nPublic key: public-stderr\n" >&2'
 run_case "compact" 'printf "PrivateKey: private-compact\nPublicKey: public-compact\n"'
+run_case "password-label" 'printf "PrivateKey: private-password-label\nPassword (PublicKey): public-password-label\nHash32: ignored\n"'
 
 printf 'PASS: x25519 密钥解析兼容性测试通过\n'

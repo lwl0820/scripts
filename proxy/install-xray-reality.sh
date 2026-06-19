@@ -152,7 +152,7 @@ extract_x25519_value() {
       sub(/:.*/, "", key)
       key = tolower(key)
       gsub(/[[:space:]_-]/, "", key)
-      if (key == wanted) {
+      if (key == wanted || index(key, wanted) > 0) {
         sub(/^[^:]*:[[:space:]]*/, "", line)
         print line
         exit
