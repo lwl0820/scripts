@@ -183,3 +183,15 @@ Windows 上如果安装了 Git Bash，可以使用：
 ```powershell
 & 'C:\Program Files\Git\bin\bash.exe' -n proxy/install-xray-reality.sh
 ```
+
+运行 Xray Reality 密钥解析回归测试：
+
+```bash
+bash tests/proxy/test_xray_key_parsing.sh
+```
+
+Windows + Git Bash：
+
+```powershell
+& 'C:\Program Files\Git\bin\bash.exe' -lc 'bash tests/proxy/test_xray_key_parsing.sh'
+```

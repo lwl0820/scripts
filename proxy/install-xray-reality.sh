@@ -142,6 +142,25 @@ generate_short_id() {
   SHORT_ID="$(openssl rand -hex 8)"
 }
 
+extract_x25519_value() {
+  local wanted="$1"
+  awk -v wanted="${wanted}" '
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      key = line
+      sub(/:.*/, "", key)
+      key = tolower(key)
+      gsub(/[[:space:]_-]/, "", key)
+      if (key == wanted) {
+        sub(/^[^:]*:[[:space:]]*/, "", line)
+        print line
+        exit
+      }
+    }
+  '
+}
+
 validate_inputs() {
   case "${PORT}" in
     ''|*[!0-9]*)
@@ -156,12 +175,12 @@ validate_inputs() {
 
 generate_reality_keys() {
   local key_output
-  key_output="$("${XRAY_BIN}" x25519)"
-  PRIVATE_KEY="$(printf '%s\n' "${key_output}" | awk -F': ' '/Private key/ {print $2}')"
-  PUBLIC_KEY="$(printf '%s\n' "${key_output}" | awk -F': ' '/Public key/ {print $2}')"
+  key_output="$("${XRAY_BIN}" x25519 2>&1)" || die "执行 xray x25519 失败，请确认 Xray 二进制可正常运行。"
+  PRIVATE_KEY="$(printf '%s\n' "${key_output}" | extract_x25519_value "privatekey")"
+  PUBLIC_KEY="$(printf '%s\n' "${key_output}" | extract_x25519_value "publickey")"
 
-  [ -n "${PRIVATE_KEY}" ] || die "生成 Reality 私钥失败。"
-  [ -n "${PUBLIC_KEY}" ] || die "生成 Reality 公钥失败。"
+  [ -n "${PRIVATE_KEY}" ] || die "生成 Reality 私钥失败：无法解析 xray x25519 输出。请手动运行 ${XRAY_BIN} x25519 查看输出格式。"
+  [ -n "${PUBLIC_KEY}" ] || die "生成 Reality 公钥失败：无法解析 xray x25519 输出。请手动运行 ${XRAY_BIN} x25519 查看输出格式。"
 }
 
 json_escape() {
