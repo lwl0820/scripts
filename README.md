@@ -30,7 +30,7 @@ proxy/install-xray-reality.sh
 - flow：XTLS Vision，即 `xtls-rprx-vision`
 - 服务：`xray.service`
 
-安装完成后，脚本会输出一条可直接导入常见代理工具的 `vless://` URL，并同时输出手动填写所需参数。
+安装完成后，脚本会输出可直接导入常见代理工具的 `vless://` URL，并同时输出手动填写所需参数。双栈或多 IP 服务器会输出多条导入 URL。
 
 ## 运行环境
 
@@ -80,7 +80,8 @@ sudo PORT=443 \
 | `FLOW` | `xtls-rprx-vision` | VLESS flow |
 | `XRAY_VERSION` | `latest` | Xray 版本；也可指定 tag，例如 `v25.6.8` |
 | `CLIENT_NAME` | `xray-reality` | 导入 URL 的节点名称 |
-| `SERVER_HOST` | 自动检测公网 IP | 分享 URL 中使用的服务器地址；自动检测失败时可手动指定 |
+| `SERVER_HOSTS` | 自动检测公网 IPv4/IPv6 | 分享 URL 中使用的服务器地址列表，支持逗号分隔多个 IPv4、IPv6 或域名 |
+| `SERVER_HOST` | 空 | 兼容旧参数；未设置 `SERVER_HOSTS` 时作为单个服务器地址使用 |
 | `INSTALL_DIR` | `/usr/local/bin` | Xray 二进制安装目录 |
 | `CONFIG_DIR` | `/usr/local/etc/xray` | Xray 配置目录 |
 | `DAT_DIR` | `/usr/local/share/xray` | `geoip.dat` 和 `geosite.dat` 目录 |
@@ -95,15 +96,23 @@ sudo XRAY_VERSION=v25.6.8 bash proxy/install-xray-reality.sh
 自动公网 IP 检测失败时，手动指定服务器地址：
 
 ```bash
-sudo SERVER_HOST=203.0.113.10 bash proxy/install-xray-reality.sh
+sudo SERVER_HOSTS=203.0.113.10 bash proxy/install-xray-reality.sh
 ```
+
+双栈或多 IP 服务器可以一次指定多个地址：
+
+```bash
+sudo SERVER_HOSTS="203.0.113.10,[2001:db8::10],proxy.example.com" bash proxy/install-xray-reality.sh
+```
+
+IPv6 地址可以写成裸地址或带方括号。脚本生成 URL 时会自动把 IPv6 host 格式化为 `[2001:db8::10]`。
 
 ## 安装后输出
 
 安装完成后会输出：
 
-- 可直接导入代理工具的 VLESS URL
-- 地址
+- 可直接导入代理工具的 VLESS URL，可能有多条
+- 地址列表
 - 端口
 - UUID
 - Reality public key
@@ -118,6 +127,12 @@ VLESS URL 格式类似：
 
 ```text
 vless://UUID@SERVER:443?type=tcp&security=reality&encryption=none&flow=xtls-rprx-vision&sni=www.microsoft.com&fp=chrome&pbk=PUBLIC_KEY&sid=SHORT_ID&spx=%2F#xray-reality
+```
+
+IPv6 地址会出现在方括号中：
+
+```text
+vless://UUID@[2001:db8::10]:443?type=tcp&security=reality&encryption=none&flow=xtls-rprx-vision&sni=www.microsoft.com&fp=chrome&pbk=PUBLIC_KEY&sid=SHORT_ID&spx=%2F#xray-reality
 ```
 
 其中 `pbk` 是 Reality 公钥，`sid` 是 shortId。私钥不会写入导入 URL，但会在安装结果中显示，用于服务端配置备份。

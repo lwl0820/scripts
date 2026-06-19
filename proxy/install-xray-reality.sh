@@ -15,6 +15,7 @@ DEST="${DEST:-www.microsoft.com:443}"
 FLOW="${FLOW:-xtls-rprx-vision}"
 XRAY_VERSION="${XRAY_VERSION:-latest}"
 CLIENT_NAME="${CLIENT_NAME:-xray-reality}"
+SERVER_HOSTS="${SERVER_HOSTS:-}"
 SERVER_HOST="${SERVER_HOST:-}"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 CONFIG_DIR="${CONFIG_DIR:-/usr/local/etc/xray}"
@@ -29,7 +30,7 @@ UUID=""
 PRIVATE_KEY=""
 PUBLIC_KEY=""
 SHORT_ID=""
-SERVER_IP_OR_HOST=""
+SERVER_IP_OR_HOSTS=()
 
 log() { printf '[信息] %s\n' "$*"; }
 warn() { printf '[警告] %s\n' "$*" >&2; }
@@ -195,16 +196,69 @@ url_encode() {
   printf '%s' "${encoded}"
 }
 
-detect_public_host() {
-  if [ -n "${SERVER_HOST}" ]; then
-    SERVER_IP_OR_HOST="${SERVER_HOST}"
-    return
+trim_spaces() {
+  local input="$1"
+  input="${input#"${input%%[![:space:]]*}"}"
+  input="${input%"${input##*[![:space:]]}"}"
+  printf '%s' "${input}"
+}
+
+strip_ipv6_brackets() {
+  local input="$1"
+  if [[ "${input}" == \[*\] ]]; then
+    input="${input#[}"
+    input="${input%]}"
+  fi
+  printf '%s' "${input}"
+}
+
+format_url_host() {
+  local host
+  host="$(trim_spaces "$1")"
+  host="$(strip_ipv6_brackets "${host}")"
+
+  if [[ "${host}" == *:* ]]; then
+    printf '[%s]' "${host}"
+  else
+    printf '%s' "${host}"
+  fi
+}
+
+append_server_host() {
+  local host
+  host="$(trim_spaces "$1")"
+  [ -n "${host}" ] || return
+  SERVER_IP_OR_HOSTS+=("$(format_url_host "${host}")")
+}
+
+append_csv_server_hosts() {
+  local csv="$1"
+  local old_ifs="${IFS}"
+  local item
+  IFS=','
+  for item in ${csv}; do
+    append_server_host "${item}"
+  done
+  IFS="${old_ifs}"
+}
+
+detect_public_hosts() {
+  local ipv4 ipv6
+
+  if [ -n "${SERVER_HOSTS}" ]; then
+    append_csv_server_hosts "${SERVER_HOSTS}"
+  elif [ -n "${SERVER_HOST}" ]; then
+    append_server_host "${SERVER_HOST}"
+  else
+    ipv4="$(curl -4 -fsS --max-time 8 https://api.ipify.org || true)"
+    ipv6="$(curl -6 -fsS --max-time 8 https://api6.ipify.org || true)"
+    append_server_host "${ipv4}"
+    append_server_host "${ipv6}"
   fi
 
-  SERVER_IP_OR_HOST="$(curl -fsS --max-time 8 https://api.ipify.org || true)"
-  if [ -z "${SERVER_IP_OR_HOST}" ]; then
-    SERVER_IP_OR_HOST="YOUR_SERVER_IP"
-    warn "无法自动获取公网 IP，分享 URL 中的 YOUR_SERVER_IP 需要手动替换。"
+  if [ "${#SERVER_IP_OR_HOSTS[@]}" -eq 0 ]; then
+    SERVER_IP_OR_HOSTS=("YOUR_SERVER_IP")
+    warn "无法自动获取公网 IPv4/IPv6，分享 URL 中的 YOUR_SERVER_IP 需要手动替换。"
   fi
 }
 
@@ -310,13 +364,12 @@ restart_service() {
 }
 
 print_result() {
-  local encoded_name encoded_flow encoded_sni encoded_public_key encoded_short_id url
+  local encoded_name encoded_flow encoded_sni encoded_public_key encoded_short_id host url
   encoded_name="$(url_encode "${CLIENT_NAME}")"
   encoded_flow="$(url_encode "${FLOW}")"
   encoded_sni="$(url_encode "${SNI}")"
   encoded_public_key="$(url_encode "${PUBLIC_KEY}")"
   encoded_short_id="$(url_encode "${SHORT_ID}")"
-  url="vless://${UUID}@${SERVER_IP_OR_HOST}:${PORT}?type=tcp&security=reality&encryption=none&flow=${encoded_flow}&sni=${encoded_sni}&fp=chrome&pbk=${encoded_public_key}&sid=${encoded_short_id}&spx=%2F#${encoded_name}"
 
   cat <<EOF
 
@@ -326,10 +379,17 @@ Xray Reality 安装完成
 请确认云厂商安全组和本机防火墙已放行 TCP ${PORT}。
 
 可直接导入代理工具的 VLESS URL：
-${url}
+EOF
+
+  for host in "${SERVER_IP_OR_HOSTS[@]}"; do
+    url="vless://${UUID}@${host}:${PORT}?type=tcp&security=reality&encryption=none&flow=${encoded_flow}&sni=${encoded_sni}&fp=chrome&pbk=${encoded_public_key}&sid=${encoded_short_id}&spx=%2F#${encoded_name}"
+    printf '%s\n' "${url}"
+  done
+
+  cat <<EOF
 
 手动填写参数：
-地址: ${SERVER_IP_OR_HOST}
+地址列表: ${SERVER_IP_OR_HOSTS[*]}
 端口: ${PORT}
 UUID: ${UUID}
 协议: VLESS
@@ -363,7 +423,7 @@ main() {
   write_service
   validate_config
   restart_service
-  detect_public_host
+  detect_public_hosts
   print_result
 }
 

@@ -16,8 +16,55 @@
   - 负责完整安装流程。
   - 包含中文使用说明、错误信息和必要注释。
   - 支持环境变量：`PORT`、`SNI`、`DEST`、`FLOW`、`XRAY_VERSION`、`CLIENT_NAME`、`INSTALL_DIR`、`CONFIG_DIR`、`DAT_DIR`、`SERVICE_FILE`。
+  - 支持 `SERVER_HOSTS` 输出多条 VLESS URL，并自动处理 IPv6 URL 方括号。
 - Create: `.gitattributes`
   - 强制 `.sh` 文件使用 LF 换行，避免脚本复制到 Linux 后出现 CRLF 执行问题。
+
+## Task 2: Add Multi-IP And Dual-Stack URL Output
+
+**Files:**
+- Modify: `proxy/install-xray-reality.sh`
+- Modify: `README.md`
+- Modify: `docs/superpowers/specs/2026-06-19-xray-reality-install-design.md`
+
+- [x] **Step 1: Add `SERVER_HOSTS` input**
+
+Add `SERVER_HOSTS="${SERVER_HOSTS:-}"` while keeping `SERVER_HOST` for backward compatibility.
+
+- [x] **Step 2: Replace single host with host array**
+
+Replace the single `SERVER_IP_OR_HOST` string with `SERVER_IP_OR_HOSTS=()` and append one formatted host per detected or user-provided address.
+
+- [x] **Step 3: Detect IPv4 and IPv6 separately**
+
+When `SERVER_HOSTS` and `SERVER_HOST` are unset, call:
+
+```bash
+curl -4 -fsS --max-time 8 https://api.ipify.org
+curl -6 -fsS --max-time 8 https://api6.ipify.org
+```
+
+- [x] **Step 4: Format IPv6 URL hosts**
+
+When a host contains `:`, strip optional existing brackets and emit `[host]` for URL host syntax.
+
+- [x] **Step 5: Print one VLESS URL per host**
+
+Loop through `SERVER_IP_OR_HOSTS` and print one importable `vless://` URL for each host.
+
+- [x] **Step 6: Update README**
+
+Document `SERVER_HOSTS`, automatic IPv4/IPv6 detection, comma-separated multi-host input, and IPv6 bracket output.
+
+- [x] **Step 7: Validate**
+
+Run:
+
+```bash
+bash -n proxy/install-xray-reality.sh
+```
+
+Expected: exit code `0`, no output.
 
 ## Task 1: Create Installation Script
 

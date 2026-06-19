@@ -50,6 +50,8 @@ sudo PORT=443 SNI=www.microsoft.com DEST=www.microsoft.com:443 bash proxy/instal
 - `FLOW`：VLESS flow，默认 `xtls-rprx-vision`。
 - `XRAY_VERSION`：Xray 版本，默认 `latest`，也可指定如 `v25.6.8`。
 - `CLIENT_NAME`：分享 URL 中的节点名称，默认 `xray-reality`。
+- `SERVER_HOSTS`：分享 URL 中使用的服务器地址列表，支持逗号分隔多个 IPv4、IPv6 或域名。
+- `SERVER_HOST`：兼容旧参数，未设置 `SERVER_HOSTS` 时作为单个服务器地址使用。
 - `INSTALL_DIR`：Xray 二进制目录，默认 `/usr/local/bin`。
 - `CONFIG_DIR`：Xray 配置目录，默认 `/usr/local/etc/xray`。
 - `DAT_DIR`：geo 数据目录，默认 `/usr/local/share/xray`。
@@ -75,7 +77,7 @@ sudo PORT=443 SNI=www.microsoft.com DEST=www.microsoft.com:443 bash proxy/instal
 11. 写入 `/etc/systemd/system/xray.service`。
 12. 执行 `systemctl daemon-reload`、`enable`、`restart`。
 13. 使用 `systemctl --no-pager --full status xray` 或 `xray run -test -config` 验证。
-14. 输出服务端参数和可直接导入代理工具的 VLESS 分享 URL。
+14. 输出服务端参数和可直接导入代理工具的 VLESS 分享 URL。双栈或多 IP 服务器应输出多条 URL。
 
 ## 配置结构
 
@@ -102,7 +104,7 @@ sudo PORT=443 SNI=www.microsoft.com DEST=www.microsoft.com:443 bash proxy/instal
 
 ## 分享 URL
 
-脚本安装完成后必须输出一条 VLESS URL，格式如下：
+脚本安装完成后必须输出可直接导入代理工具的 VLESS URL。服务器存在多个公网地址时，每个地址输出一条 URL，格式如下：
 
 ```text
 vless://${UUID}@${SERVER_IP_OR_HOST}:${PORT}?type=tcp&security=reality&encryption=none&flow=${FLOW}&sni=${SNI}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&spx=%2F#${CLIENT_NAME}
@@ -110,14 +112,20 @@ vless://${UUID}@${SERVER_IP_OR_HOST}:${PORT}?type=tcp&security=reality&encryptio
 
 其中：
 
-- `SERVER_IP_OR_HOST` 默认通过公网 IP 查询接口获取；如果查询失败，提示用户手动替换。
+- `SERVER_HOSTS` 可显式指定多个地址，使用逗号分隔，例如 `SERVER_HOSTS="1.2.3.4,[2001:db8::1],example.com"`。
+- 未设置 `SERVER_HOSTS` 时，若设置了旧参数 `SERVER_HOST`，脚本使用 `SERVER_HOST` 输出一条 URL。
+- 未设置 `SERVER_HOSTS` 和 `SERVER_HOST` 时，脚本分别尝试通过公网 IP 查询接口获取 IPv4 与 IPv6。
+- IPv4 查询接口为 `https://api.ipify.org`。
+- IPv6 查询接口为 `https://api6.ipify.org`。
+- 如果 IPv4 和 IPv6 都查询失败，使用 `YOUR_SERVER_IP` 占位并提示用户手动替换。
+- IPv6 地址在 URL host 部分必须带方括号，例如 `[2001:db8::1]`。用户在 `SERVER_HOSTS` 中传入裸 IPv6 时，脚本自动补方括号。
 - `pbk` 使用 Reality 公钥，不输出私钥到 URL。
 - `sid` 使用自动生成的 shortId。
 - `fp` 默认 `chrome`，兼容常见代理客户端。
 - `spx` 默认 `/`，URL 编码为 `%2F`。
 - `CLIENT_NAME` 需要进行 URL fragment 编码，避免中文或空格导致导入失败。
 
-脚本仍需同时输出分项参数，便于用户在不支持分享链接的客户端中手动填写。
+脚本仍需同时输出分项参数，便于用户在不支持分享链接的客户端中手动填写。手动参数中的地址应显示地址列表。
 
 ## 错误处理
 
