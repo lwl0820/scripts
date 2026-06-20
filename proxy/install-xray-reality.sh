@@ -9,7 +9,9 @@ set -Eeuo pipefail
 #
 # 安装完成后会输出可直接导入代理工具的 VLESS URL。
 
-PORT="${PORT:-443}"
+DEFAULT_PORT_MIN=49152
+DEFAULT_PORT_MAX=65535
+PORT="${PORT:-}"
 SNI="${SNI:-www.microsoft.com}"
 DEST="${DEST:-www.microsoft.com:443}"
 FLOW="${FLOW:-xtls-rprx-vision}"
@@ -49,6 +51,12 @@ command_exists() {
 
 need_root() {
   [ "$(id -u)" -eq 0 ] || die "请使用 root 运行：sudo bash $0"
+}
+
+pick_default_port() {
+  local range
+  range=$((DEFAULT_PORT_MAX - DEFAULT_PORT_MIN + 1))
+  printf '%s' $((DEFAULT_PORT_MIN + RANDOM % range))
 }
 
 install_dependencies() {
@@ -162,6 +170,10 @@ extract_x25519_value() {
 }
 
 validate_inputs() {
+  if [ -z "${PORT}" ]; then
+    PORT="$(pick_default_port)"
+  fi
+
   case "${PORT}" in
     ''|*[!0-9]*)
       die "PORT 必须是数字，例如：PORT=443"
