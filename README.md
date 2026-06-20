@@ -50,6 +50,12 @@ proxy/install-xray-reality.sh
 
 ## 快速使用
 
+一键执行公开仓库脚本：
+
+```bash
+sudo bash <(curl -sL https://raw.githubusercontent.com/lwl0820/scripts/main/proxy/install-xray-reality.sh)
+```
+
 在服务器上克隆仓库后运行：
 
 ```bash
@@ -168,30 +174,4 @@ sudo /usr/local/bin/xray run -test -config /usr/local/etc/xray/config.json
 
 ```bash
 sudo systemctl restart xray.service
-```
-
-## 本地检查
-
-在有 Bash 的环境中检查脚本语法：
-
-```bash
-bash -n proxy/install-xray-reality.sh
-```
-
-Windows 上如果安装了 Git Bash，可以使用：
-
-```powershell
-& 'C:\Program Files\Git\bin\bash.exe' -n proxy/install-xray-reality.sh
-```
-
-运行 Xray Reality 密钥解析回归测试：
-
-```bash
-bash tests/proxy/test_xray_key_parsing.sh
-```
-
-Windows + Git Bash：
-
-```powershell
-& 'C:\Program Files\Git\bin\bash.exe' -lc 'bash tests/proxy/test_xray_key_parsing.sh'
 ```
