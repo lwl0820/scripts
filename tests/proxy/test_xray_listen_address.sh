@@ -23,8 +23,8 @@ CONFIG_FILE="${CONFIG_DIR}/config.json"
 PORT=443
 UUID="00000000-0000-0000-0000-000000000000"
 FLOW="xtls-rprx-vision"
-DEST="www.microsoft.com:443"
-SNI="www.microsoft.com"
+DEST="www.apple.com:443"
+SNI="www.apple.com"
 PRIVATE_KEY="private-key"
 SHORT_ID="0011223344556677"
 

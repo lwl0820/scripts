@@ -85,8 +85,8 @@ Defaults:
 
 ```bash
 PORT="${PORT:-443}"
-SNI="${SNI:-www.microsoft.com}"
-DEST="${DEST:-www.microsoft.com:443}"
+SNI="${SNI:-www.apple.com}"
+DEST="${DEST:-www.apple.com:443}"
 FLOW="${FLOW:-xtls-rprx-vision}"
 XRAY_VERSION="${XRAY_VERSION:-latest}"
 CLIENT_NAME="${CLIENT_NAME:-xray-reality}"
@@ -173,10 +173,10 @@ Expected behavior:
         "security": "reality",
         "realitySettings": {
           "show": false,
-          "dest": "www.microsoft.com:443",
+          "dest": "www.apple.com:443",
           "xver": 0,
           "serverNames": [
-            "www.microsoft.com"
+            "www.apple.com"
           ],
           "privateKey": "PRIVATE_KEY_VALUE",
           "shortIds": [

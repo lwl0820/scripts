@@ -39,14 +39,14 @@ sudo bash proxy/install-xray-reality.sh
 可用环境变量覆盖默认值：
 
 ```bash
-sudo PORT=443 SNI=www.microsoft.com DEST=www.microsoft.com:443 bash proxy/install-xray-reality.sh
+sudo PORT=443 SNI=www.apple.com DEST=www.apple.com:443 bash proxy/install-xray-reality.sh
 ```
 
 ## 关键参数
 
 - `PORT`：监听端口，默认 `443`。
-- `SNI`：Reality serverNames 和客户端 SNI，默认 `www.microsoft.com`。
-- `DEST`：Reality dest，默认 `www.microsoft.com:443`。
+- `SNI`：Reality serverNames 和客户端 SNI，默认 `www.apple.com`。
+- `DEST`：Reality dest，默认 `www.apple.com:443`。
 - `FLOW`：VLESS flow，默认 `xtls-rprx-vision`。
 - `XRAY_VERSION`：Xray 版本，默认 `latest`，也可指定如 `v25.6.8`。
 - `CLIENT_NAME`：分享 URL 中的节点名称，默认 `xray-reality`。

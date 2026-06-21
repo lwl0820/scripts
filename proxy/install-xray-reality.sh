@@ -5,7 +5,7 @@ set -Eeuo pipefail
 # 适用环境：Debian/Ubuntu + systemd
 # 用法：
 #   sudo bash proxy/install-xray-reality.sh
-#   sudo PORT=443 SNI=www.microsoft.com DEST=www.microsoft.com:443 bash proxy/install-xray-reality.sh
+#   sudo PORT=443 SNI=www.apple.com DEST=www.apple.com:443 bash proxy/install-xray-reality.sh
 #
 # 安装完成后会输出可直接导入代理工具的 VLESS URL。
 
@@ -13,8 +13,8 @@ DEFAULT_PORT_MIN=49152
 DEFAULT_PORT_MAX=65535
 PORT="${PORT:-}"
 LISTEN="${LISTEN:-::}"
-SNI="${SNI:-www.microsoft.com}"
-DEST="${DEST:-www.microsoft.com:443}"
+SNI="${SNI:-www.apple.com}"
+DEST="${DEST:-www.apple.com:443}"
 FLOW="${FLOW:-xtls-rprx-vision}"
 XRAY_VERSION="${XRAY_VERSION:-latest}"
 CLIENT_NAME="${CLIENT_NAME:-xray-reality}"
