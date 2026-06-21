@@ -12,6 +12,7 @@ set -Eeuo pipefail
 DEFAULT_PORT_MIN=49152
 DEFAULT_PORT_MAX=65535
 PORT="${PORT:-}"
+LISTEN="${LISTEN:-::}"
 SNI="${SNI:-www.microsoft.com}"
 DEST="${DEST:-www.microsoft.com:443}"
 FLOW="${FLOW:-xtls-rprx-vision}"
@@ -47,6 +48,39 @@ trap cleanup EXIT
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
+}
+
+supported_keys() {
+  printf '%s' "PORT LISTEN SNI DEST FLOW XRAY_VERSION CLIENT_NAME SERVER_HOSTS SERVER_HOST INSTALL_DIR CONFIG_DIR DAT_DIR SERVICE_FILE"
+}
+
+apply_cli_overrides() {
+  local arg key value
+
+  for arg in "$@"; do
+    case "${arg}" in
+      *=*)
+        key="${arg%%=*}"
+        value="${arg#*=}"
+        case "${key}" in
+          PORT|LISTEN|SNI|DEST|FLOW|XRAY_VERSION|CLIENT_NAME|SERVER_HOSTS|SERVER_HOST|INSTALL_DIR|CONFIG_DIR|DAT_DIR|SERVICE_FILE)
+            printf -v "${key}" '%s' "${value}"
+            ;;
+          *)
+            die "不支持的参数：${key}。支持的 KEY=value 参数：$(supported_keys)"
+            ;;
+        esac
+        ;;
+      *)
+        die "不支持的参数：${arg}。请使用 KEY=value，例如：PORT=443"
+        ;;
+    esac
+  done
+}
+
+refresh_derived_paths() {
+  XRAY_BIN="${INSTALL_DIR}/xray"
+  CONFIG_FILE="${CONFIG_DIR}/config.json"
 }
 
 need_root() {
@@ -294,8 +328,9 @@ detect_public_hosts() {
 }
 
 write_config() {
-  local escaped_uuid escaped_flow escaped_dest escaped_sni escaped_private_key escaped_short_id
+  local escaped_uuid escaped_listen escaped_flow escaped_dest escaped_sni escaped_private_key escaped_short_id
   escaped_uuid="$(json_escape "${UUID}")"
+  escaped_listen="$(json_escape "${LISTEN}")"
   escaped_flow="$(json_escape "${FLOW}")"
   escaped_dest="$(json_escape "${DEST}")"
   escaped_sni="$(json_escape "${SNI}")"
@@ -304,6 +339,9 @@ write_config() {
 
   log "写入 Xray 配置：${CONFIG_FILE}"
   install -d -m 755 "${CONFIG_DIR}"
+  if [ -e "${CONFIG_FILE}" ]; then
+    warn "检测到已有 Xray 配置，本次会生成新的 UUID、Reality 密钥和 shortId；旧节点需要重新导入最新输出的 URL。"
+  fi
   backup_if_exists "${CONFIG_FILE}"
 
   cat > "${CONFIG_FILE}" <<EOF
@@ -314,7 +352,7 @@ write_config() {
   "inbounds": [
     {
       "tag": "vless-reality-in",
-      "listen": "0.0.0.0",
+      "listen": "${escaped_listen}",
       "port": ${PORT},
       "protocol": "vless",
       "settings": {
@@ -441,8 +479,11 @@ EOF
 }
 
 main() {
+  apply_cli_overrides "$@"
+  refresh_derived_paths
   need_root
   validate_inputs
+  log "使用监听地址：${LISTEN}，端口：${PORT}"
   install_dependencies
   detect_arch
   download_xray

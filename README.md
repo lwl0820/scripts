@@ -66,14 +66,21 @@ sudo bash proxy/install-xray-reality.sh
 
 ## 常用参数
 
-可以通过环境变量覆盖默认值：
+可以通过 `KEY=value` 参数覆盖默认值。推荐把参数放在脚本路径后面，这种写法不依赖 `sudo` 是否保留环境变量：
 
 ```bash
-sudo PORT=443 \
+sudo bash proxy/install-xray-reality.sh \
+  PORT=443 \
+  LISTEN="::" \
   SNI=www.microsoft.com \
   DEST=www.microsoft.com:443 \
-  CLIENT_NAME=my-node \
-  bash proxy/install-xray-reality.sh
+  CLIENT_NAME=my-node
+```
+
+一键执行远程脚本时也可以使用同样的参数写法：
+
+```bash
+sudo bash <(curl -sL https://raw.githubusercontent.com/lwl0820/scripts/main/proxy/install-xray-reality.sh) PORT=443
 ```
 
 可配置参数：
@@ -81,6 +88,7 @@ sudo PORT=443 \
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PORT` | 随机 `49152-65535` | Xray 监听端口；未设置时自动使用高位随机端口 |
+| `LISTEN` | `::` | Xray 入站监听地址；默认用于双栈监听。仅需要 IPv4 时可设为 `0.0.0.0` |
 | `SNI` | `www.microsoft.com` | Reality serverNames 和客户端 SNI |
 | `DEST` | `www.microsoft.com:443` | Reality 回落目标 |
 | `FLOW` | `xtls-rprx-vision` | VLESS flow |
@@ -148,6 +156,8 @@ vless://UUID@[2001:db8::10]:443?type=tcp&security=reality&encryption=none&flow=x
 - 安装结果中的 UUID、shortId 和 Reality private key 都属于服务凭据，请妥善保存，不要公开分享。
 - Reality 的 `SNI` 和 `DEST` 应选择支持 TLS 1.3、访问稳定且不与服务器自身业务冲突的网站。
 - 默认会生成一个高位随机端口，需要在云厂商安全组和本机防火墙中放行该端口。
+- 如果导入的是 IPv6 节点，请确认服务器有可用公网 IPv6、云安全组和本机防火墙已放行 IPv6 入站，并且 `LISTEN` 没有被改成只监听 IPv4 的 `0.0.0.0`。
+- 重复运行脚本会重新生成 UUID、Reality 密钥和 shortId，并覆盖服务端配置；旧客户端节点会失效，需要导入最后一次安装输出的新 URL。
 - 脚本会在覆盖已有 Xray 文件或配置前创建带时间戳的 `.bak` 备份。
 
 ## 常用排障命令
